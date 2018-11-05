@@ -14,7 +14,7 @@ This shows how the probe is used to inspect what an std::vector is doing to the 
 
 int main()
 {
-    using probe = probe_t<int>; //we want to use it with ints as underlying values
+    using probe = pr::probe_t<int>; //we want to use it with ints as underlying values
 
     probe::reset(); //resets all metrics that is stored in class static storage
 
@@ -22,7 +22,7 @@ int main()
 
     numbers.push_back({});
 
-    probe_counts c = probe::last(); //returns all counts of events happened since last time last()/reset() was called
+    pr::probe_counts c = probe::last(); //returns all counts of events happened since last time last()/reset() was called
 
     assert(c.copies == 0); //that should not have invoked copies
     assert(c.moves > 0); //that should have invoked moves
@@ -36,7 +36,7 @@ int main()
         probe p = std::move(numbers[0]);
     }
 
-    probe_state s = probe::state();
+    pr::probe_state s = probe::state();
     assert(s.existing == 2); //2 instances should be existing at this point (has active lifetime. ends with destructor)
     assert(s.active == 1); //1 instance should be active at this point (holds meaningful value. ends by being moved from, or destructed)
 

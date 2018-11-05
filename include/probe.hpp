@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 
+namespace pr
+{
 struct probe_state
 {
     int64_t active = 0;
@@ -207,3 +209,4 @@ template <typename value_type>
 probe_counts probe_t<value_type>::s_total = {};
 template <typename value_type>
 probe_counts probe_t<value_type>::s_last = {};
+}
