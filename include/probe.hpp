@@ -189,6 +189,8 @@ class probe_t
         res += to_string(s_state);
         return res;
     }
+    operator value_type&() { return m_value; }
+    operator const value_type&() const { return m_value; }
     private:
     static probe_state s_state;
     static probe_counts s_total;

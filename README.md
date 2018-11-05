@@ -22,6 +22,8 @@ int main()
 
     numbers.push_back({});
 
+    assert(numbers.back() == 0); //can be converted back to value
+
     pr::probe_counts c = probe::last(); //returns all counts of events happened since last time last()/reset() was called
 
     assert(c.copies == 0); //that should not have invoked copies
