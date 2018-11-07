@@ -65,47 +65,49 @@ void update_count_min_max(probe_counts& c, int64_t existing, int64_t active)
     c.max_active = std::max(c.max_active, active);
 };
 
-template <typename value_type>
+template <typename t_value_type>
 class probe_t
 {
     public:
+    using value_type = t_value_type;
+
     probe_t(): m_value(value_type{})
     {
-        ++s_last.defco;++s_total.defco;
+        ++s_last().defco;++s_total().defco;
 
-        ++s_state.existing;
+        ++s_state().existing;
         m_active = true;
-        ++s_state.active;
+        ++s_state().active;
 
         update_min_max();
     };
     probe_t(const value_type& v): m_value(v)
     {
-        ++s_last.valco;++s_total.valco;
+        ++s_last().valco;++s_total().valco;
 
-        ++s_state.existing;
+        ++s_state().existing;
         m_active = true;
-        ++s_state.active;
+        ++s_state().active;
 
         update_min_max();
     };
     probe_t(const probe_t& o): m_value(o.m_value)
     {
-        ++s_last.copco;++s_total.copco;
-        ++s_last.copies;++s_total.copies;
+        ++s_last().copco;++s_total().copco;
+        ++s_last().copies;++s_total().copies;
 
-        ++s_state.existing;
+        ++s_state().existing;
         m_active = o.m_active;
-        s_state.active += m_active;
+        s_state().active += m_active;
 
         update_min_max();
     };
     probe_t(probe_t&& o) noexcept: m_value(std::move(o.m_value))
     {
-        ++s_last.movco;++s_total.movco;
-        ++s_last.moves;++s_total.moves;
+        ++s_last().movco;++s_total().movco;
+        ++s_last().moves;++s_total().moves;
 
-        ++s_state.existing;
+        ++s_state().existing;
         m_active = o.m_active;
         o.m_active = false;
 
@@ -113,14 +115,14 @@ class probe_t
     };
     probe_t& operator=(const probe_t& o)
     {
-        ++s_last.copas;++s_total.copas;
-        ++s_last.copies;++s_total.copies;
+        ++s_last().copas;++s_total().copas;
+        ++s_last().copies;++s_total().copies;
 
         int activeBefore = m_active + o.m_active;
         m_active = o.m_active;
         int activeAfter = m_active + o.m_active;
 
-        s_state.active += (activeAfter - activeBefore);
+        s_state().active += (activeAfter - activeBefore);
 
         update_min_max();
 
@@ -130,15 +132,15 @@ class probe_t
     }
     probe_t& operator=(probe_t&& o) noexcept
     {
-        ++s_last.movas;++s_total.movas;
-        ++s_last.moves;++s_total.moves;
+        ++s_last().movas;++s_total().movas;
+        ++s_last().moves;++s_total().moves;
 
         int activeBefore = m_active + o.m_active;
         m_active = o.m_active;
         o.m_active = false;
         int activeAfter = m_active + o.m_active;
 
-        s_state.active += (activeAfter - activeBefore);
+        s_state().active += (activeAfter - activeBefore);
 
         update_min_max();
 
@@ -148,67 +150,82 @@ class probe_t
     };
     ~probe_t()
     {
-        ++s_last.destr;++s_total.destr;
+        ++s_last().destr;++s_total().destr;
 
-        --s_state.existing;
-        s_state.active -= m_active;
+        --s_state().existing;
+        s_state().active -= m_active;
 
         update_min_max();
     };
     static void reset()
     {
-        s_state = {};
-        s_total = {};
-        s_last = {};
+        s_state() = {};
+        s_total() = {};
+        s_last() = {};
+    }
+    static void reset_counts()
+    {
+        s_total() = {};
+        s_last() = {};
+    }
+    static void reset_state()
+    {
+        s_state() = {};
     }
     static probe_state state()
     {
-        return s_state;
+        return s_state();
     }
     static probe_counts total()
     {
-        return s_total;
+        return s_total();
     }
     static probe_counts last()
     {
-        probe_counts result = s_last;
-        s_last = {};
+        probe_counts result = s_last();
+        s_last() = {};
         return result;
     }
     static bool clean()
     {
-        return s_state.active == 0 && s_state.existing == 0;
+        return s_state().active == 0 && s_state().existing == 0;
     }
     static std::string report()
     {
         std::string res = "===LAST===\n";
-        res += to_string(s_last) + "\n";
+        res += to_string(s_last()) + "\n";
         res += "===TOTAL===\n";
-        res += to_string(s_total) + "\n";
+        res += to_string(s_total()) + "\n";
         res += "===STATE===\n";
-        res += to_string(s_state);
+        res += to_string(s_state());
         return res;
     }
     operator value_type&() { return m_value; }
     operator const value_type&() const { return m_value; }
     private:
-    static probe_state s_state;
-    static probe_counts s_total;
-    static probe_counts s_last;
+    static probe_state& s_state()
+    {
+        static probe_state instance = {};
+        return instance;
+    }
+    static probe_counts& s_total()
+    {
+        static probe_counts instance = {};
+        return instance;
+    }
+    static probe_counts& s_last()
+    {
+        static probe_counts instance = {};
+        return instance;
+    }
+    //static probe_counts s_last;
 
     bool m_active = true;
     value_type m_value;
     inline void update_min_max()
     {
-        update_count_min_max(s_total, s_state.existing, s_state.active);
-        update_count_min_max(s_last, s_state.existing, s_state.active);
+        update_count_min_max(s_total(), s_state().existing, s_state().active);
+        update_count_min_max(s_last(), s_state().existing, s_state().active);
     }
 };
-
-template <typename value_type>
-probe_state probe_t<value_type>::s_state = {};
-template <typename value_type>
-probe_counts probe_t<value_type>::s_total = {};
-template <typename value_type>
-probe_counts probe_t<value_type>::s_last = {};
 }
